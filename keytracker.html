@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <v-main>
+      <v-container>
+        <v-row>
+          <v-col lg-6 >
+            <h2 class='info--text'>Api Control</h2>
+            <br>
+                  <v-card elevation="8">
+                      <br>
+                      <div class='ml-2 mr-2'>
+                      <v-textarea v-model='q'
+                        name="input-7-1"
+                        label="Key Words"
+                        hint="Hint text"
+                      ></v-textarea>
+                    </div>
+                  </br>
+
+                      <v-text-field v-model='d'  class='ml-3 mr-3' label="Domain"></v-text-field>
+                      <div class='d-flex'>
+                      <h4 class='ml-5 mt-2'>Add Compatitor</h4>
+                      <v-btn @click='addCompatitior()' elevation='0'  class="mx-2" fab dark small color="success"><v-icon elevation-0 dark>mdi-plus</v-icon></v-btn>
+
+                    </div>
+          <div class='ml-3'>
+                      <br>
+                      <div class='mt-2' v-for='(di, index) in doMains' :key='index'>
+
+                      <v-chip class='ml-2' close @click:close="aremoveCompatitior(di)">{{ di }}</v-chip>
+                      </div>
+                      <br>
+                    </div>
+                    <br>
+                      <div class='text-center mt-3'>
+                      <v-btn @click='adDkey()'  style="width: 50%;" class='mb-3'   color="primary">Test</v-btn>
+                    </div>
+
+                  </v-card>
+
+      <p></p>
+
+
+      <button @click='testG'>test</button>
+               </v-card>
+            </v-col>
+
+            <v-col lg-6  class='text-center'>
+              <h2 class='red--text'>Results</h2>
+              <br>
+              <v-card elevation="8">
+                <v-card-title  class="justify-center"><h4 v-if="serp_loading==false" class='red--text'>No Results</h4></v-card-title>
+                <v-progress-linear v-if='loading == true'
+                  indeterminate
+                  color="cyan"
+                ></v-progress-linear>
+
+                <div v-for='pos in testVar'>
+
+                </br>
+                  <span class='ml-4'>
+                    keyword: {{ pos.keyword }}<br>
+                  </span>
+                </br>
+                <span class='ml-4'>
+
+                  url: {{ pos.url }}<br>
+
+                </span>
+                <br>
+                <span class='ml-4'>
+                  position:{{ pos.position}} <br>
+                </span>
+                <br>
+                <br>
+              </div>
+
+                </v-card>
+              </v-col>
+          </v-row>
+     </v-container>
+  </v-main>
+
+    </v-app>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
+  <script>
+
+  new Vue({
+    el: '#app',
+    vuetify: new Vuetify(),
+    data:{
+      q: "",
+      d:"www.macdonalds.com",
+      searchResult: [],
+      searchPos:[],
+      testVar:[],
+      doMains:[],
+      loading:false,
+      serp_loading:false,
+      myObj : [{ foo: 1, bar: 2}, { foo: 3, bar: 4}, { foo: 5, bar: 6}],
+      k:'',
+
+    },
+    methods:{
+      adDkey: function(){
+        app.searchResult = [];
+        var lines = this.q.split('\n');
+             for (const element of lines){
+                var keyWord = element;
+
+                this.k = keyWord;
+                this.doSearch(keyWord);
+            }
+          },
+      doSearch: function(keyWord){
+        this.loading = true;
+        console.log('request');
+          var app = this
+          const apiKey = 'KEY';
+          axios.get(`http://api.serpstack.com/search?access_key=${apiKey}&num=90&query=${keyWord}`)
+        //  axios.get('jsons/result.js')
+              .then(function (response) {
+                  app.searchResult = response.data;
+                  app.findObjectByLabel(app.searchResult, 'domain', keyWord)
+                  app.loading = false
+                  app.serp_loading = true
+                //  console.log(app.searchResult);
+              })
+              .catch(function (error) {
+                  console.log(error);
+              })
+          },
+          findObjectByLabel:function(obj, label, keyWord){
+          //  console.log(keyWord);
+            for(var elements in obj){
+               if (elements === label){
+                 for (const element of this.doMains) {
+                   if (obj[elements] == element){
+                     var telement = {}
+                  //   telement.url = this.k;
+                     console.log('adding to json');
+                     telement.url = obj['domain'];
+                     telement.position = obj['position'];
+                     telement.keyword = keyWord;
+                     this.testVar.push(telement);
+
+                   }
+                     }
+               }
+                if(typeof obj[elements] === 'object'){
+                this.findObjectByLabel(obj[elements], 'domain', keyWord);
+               }
+           }
+
+          },
+          addCompatitior:function(){
+            this.doMains.push(this.d);
+          },
+          aremoveCompatitior:function(di){
+            const index = this.doMains.indexOf(di);
+                if (index > -1) {
+                  this.doMains.splice(index, 1);
+                }
+          },
+          testG:function(){
+            for(let user of this.testVar){
+              console.log(user.position)
+            }
+          },
+        }
+  })
+</script>
+</body>
+</html>

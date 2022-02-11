@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <v-main>
+      <v-container>
+        <v-row>
+          <v-col lg-6 >
+            <h1 class='info--text text-center'>Data Table</h1>
+            <div class='text-right'>
+            <v-btn @click='adDkey()'  style="width: 20%;" class='mb-3'   color="primary">SCAN</v-btn>
+          </div>
+            <div class='mt-5'>
+              <v-progress-linear v-if='loading == true'
+          indeterminate
+          color="cyan"
+        ></v-progress-linear>
+    <v-data-table
+      :headers="headers"
+      :items="testVar"
+      item-key="name"
+      class="elevation-1"
+      :search="search"
+      :custom-filter="filterOnlyCapsText"
+    >
+
+      <template v-slot:top>
+        <v-text-field
+          v-model="search"
+          label="Search (UPPER CASE ONLY)"
+          class="mx-4"
+        ></v-text-field>
+      </template>
+      <template v-slot:body.append>
+        <tr>
+          <td></td>
+          <td>
+            <v-text-field
+              v-model="position"
+              type="number"
+              label="Less than"
+            ></v-text-field>
+          </td>
+          <td colspan="4"></td>
+        </tr>
+      </template>
+
+    </v-data-table>
+  </div>
+
+            <br>
+
+            <div class="text-center">
+    <v-dialog
+      v-model="dialog"
+      width="500"
+    >
+      <template v-slot:activator="{ on, attrs }">
+        <v-btn
+          color="red lighten-2"
+          dark
+          v-bind="attrs"
+          v-on="on"
+        >
+          Click Me
+        </v-btn>
+      </template>
+
+      <v-card>
+        <v-card-title class="headline grey lighten-2">
+          Add Key Words
+        </v-card-title>
+
+        <v-card-text class='mt-5'>
+          <v-textarea v-model='q'
+            name="input-7-1"
+            label="Key Words"
+            hint="Hint text"
+          ></v-textarea>
+        </v-card-text>
+
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            text
+            @click="dialog = false"
+          >
+            I accept
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
+
+
+
+            </v-col>
+
+          </v-row>
+     </v-container>
+  </v-main>
+
+    </v-app>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
+  <script>
+
+  new Vue({
+    el: '#app',
+    vuetify: new Vuetify(),
+    data:{
+      dialog: false,
+      search: '',
+      position: '',
+      searchResult:[],
+      searchPos:[],
+      testVar:[],
+      loading:false,
+      k:'',
+      doMains:['test.com'],
+      q:'',
+      desserts: [
+        {
+          keyword: 'KitKat',
+          position: 1,
+          url:'www.sdsd.com',
+        },
+
+        {
+          keyword: 'KitKat',
+          position: 2,
+          url:'www.sdsd.com',
+        },
+
+      ],
+
+    },
+    computed: {
+          headers () {
+            return [
+              {
+                text: 'Keywords',
+                align: 'start',
+                sortable: false,
+                value: 'keyword',
+              },
+              {
+                text: 'Position',
+                value: 'position',
+                filter: value => {
+                  if (!this.position) return true
+                  return value < parseInt(this.position)
+                },
+              },
+              { text: 'Url (g)', value: 'url' },
+
+            ]
+          },
+        },
+        methods: {
+          filterOnlyCapsText (value, search, item) {
+            return value != null &&
+              search != null &&
+              typeof value === 'string' &&
+              value.toString().toLocaleUpperCase().indexOf(search) !== -1
+
+        },
+
+        adDkey: function(){
+          console.log('g');
+          app.searchResult = [];
+          var lines = this.q.split('\n');
+               for (const element of lines){
+                 //this.loading = true;
+
+                  console.log(element);
+                  var keyWord = element;
+                  //console.log(keyWord);
+                  this.k = keyWord;
+                //  console.log(this.k);
+                  this.doSearch(keyWord);
+              }
+
+            },
+
+            doSearch: function(keyWord){
+
+              this.loading = true;
+              console.log('request');
+                var app = this
+                axios.get('http://api.serpstack.com/search?access_key=KEY&num=90&query='+ keyWord)
+                    .then(function (response) {
+                        app.searchResult = response.data;
+                        console.log('request');
+                        app.findObjectByLabel(app.searchResult, 'domain', keyWord)
+                        app.loading = false
+
+                      //  console.log(app.searchResult);
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    })
+                },
+
+                findObjectByLabel:function(obj, label, keyWord){
+                //  console.log(keyWord);
+                  for(var elements in obj){
+                     if (elements === label){
+                       for (const element of this.doMains) {
+                         if (obj[elements] == element){
+                           var telement = {}
+                        //   telement.url = this.k;
+                           console.log('adding to json');
+                           telement.url = obj['domain'];
+                           telement.position = obj['position'];
+                           telement.keyword = keyWord;
+                           this.testVar.push(telement);
+                           //this.searchPos.push(obj['position']);
+                         }
+                           }
+                     }
+                      if(typeof obj[elements] === 'object'){
+
+                      this.findObjectByLabel(obj[elements], 'domain', keyWord);
+                     }
+                 }
+                },
+
+      }
+  })
+</script>
+</body>
+</html>
